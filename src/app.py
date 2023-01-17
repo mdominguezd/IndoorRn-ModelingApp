@@ -36,8 +36,8 @@ import zipfile
 
 # ## Pre-processing for data distribution part
 # Unzip IndVarModel file
-with zipfile.ZipFile("Dataset for regression/Houses_for_Rn_estimation_processed_3116.zip", 'r') as zip_ref:
-    zip_ref.extractall("Dataset for regression")
+# with zipfile.ZipFile("Dataset for regression/Houses_for_Rn_estimation_processed_3116.zip", 'r') as zip_ref:
+#     zip_ref.extractall("Dataset for regression")
     
 # checking if the directory demo_folder 
 # exist or not.
