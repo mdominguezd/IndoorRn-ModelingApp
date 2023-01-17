@@ -41,11 +41,11 @@ import zipfile
     
 # checking if the directory demo_folder 
 # exist or not.
-if not path.exists("Regression results"):
+# if not path.exists("Regression results"):
       
-    # if the demo_folder directory is not present 
-    # then create it.
-    os.makedirs("Regression results")
+#     # if the demo_folder directory is not present 
+#     # then create it.
+#     os.makedirs("Regression results")
     
 # In[3]:
 
@@ -134,16 +134,17 @@ def fit_model(X, y, HQ, model = 'Log_Linear'):
     
     name_file = model+var_ID
     
-    if HQ:
-        exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol_HQ.geojson')
-    else:
-        exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol.geojson')
+#     if HQ:
+#         exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol_HQ.geojson')
+#     else:
+#         exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol.geojson')
         
-    if exists:
-        msg = 'Fitting model...\nEstimating RC values...'
-    else:
-        msg = 'Fitting model...\nEstimating RC values...\n\nThis will take some time...\n\n'
+#     if exists:
+#         msg = 'Fitting model...\nEstimating RC values...'
+#     else:
+#         msg = 'Fitting model...\nEstimating RC values...\n\nThis will take some time...\n\n'
     
+    exists = False
         
     return importance, RMSE, mod, exists, name_file, msg
 
