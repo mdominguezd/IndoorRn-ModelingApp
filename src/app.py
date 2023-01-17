@@ -14,6 +14,7 @@ import pandas as pd
 import dash
 from dash import Dash, dcc, html, callback, callback_context
 import dash_bootstrap_components as dbc
+# from dash_bootstrap_templates import load_figure_template
 import dash_daq as daq
 from dash.exceptions import PreventUpdate
 from dash import dash_table
@@ -231,8 +232,8 @@ def plot_figure(Organization):
     fig=make_subplots(specs=[[{'secondary_y': True}, {"type": "pie"}]],
                       cols = 2)
 
-    fig.update_layout(template = 'morph',
-                     );
+    # fig.update_layout(template = 'morph',
+    #                  );
 
     fig.add_trace(
         go.Histogram(x=hist.data[0].x,
@@ -304,7 +305,7 @@ def plot_figure(Organization):
 app = Dash(__name__, external_stylesheets=[dbc.themes.MORPH])
 server = app.server
 
-load_figure_template(["morph"])
+# load_figure_template(["morph"])
 color = 'lightsteelblue'
 
 app.layout = html.Div([
