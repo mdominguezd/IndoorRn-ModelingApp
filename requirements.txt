@@ -8,8 +8,8 @@ pandas==1.4.2
 plotly==5.6.0
 scikit_learn==1.2.0
 Shapely==1.8.0
-statsmodels==0.13.0
-scipy==1.10.0
+statsmodels==0.13.1
+scipy==1.9.0
 gunicorn
 dash-tools
 
