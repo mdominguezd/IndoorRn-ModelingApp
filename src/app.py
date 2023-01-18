@@ -32,7 +32,7 @@ import warnings
 import dash_mantine_components as dmc
 import sys
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from sklearn.ensemble import RandomForestRegressor as RFR
 import base64
