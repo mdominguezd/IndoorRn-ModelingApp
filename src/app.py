@@ -24,9 +24,9 @@ from dash.dependencies import Input, Output, State
 from dash_iconify import DashIconify
 import geopandas as gpd
 from shapely.geometry import Polygon
-from os import path
-from os import remove
-from os import listdir
+# from os import path
+# from os import remove
+# from os import listdir
 import re
 import warnings
 import dash_mantine_components as dmc
@@ -46,11 +46,11 @@ import io
     
 # checking if the directory demo_folder 
 # exist or not.
-if not path.exists("Regression results"):
+# if not path.exists("Regression results"):
       
-    # if the demo_folder directory is not present 
-    # then create it.
-    os.makedirs("Regression results")
+#     # if the demo_folder directory is not present 
+#     # then create it.
+#     os.makedirs("Regression results")
     
 # In[3]:
 
@@ -116,16 +116,19 @@ def fit_model(X, y, HQ, model = 'Log_Linear'):
     
     name_file = model+var_ID
     
-    if HQ:
-        exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol_HQ.geojson')
-    else:
-        exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol.geojson')
+#     if HQ:
+#         exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol_HQ.geojson')
+#     else:
+#         exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol.geojson')
         
-    if exists:
-        msg = 'Fitting model...\nEstimating RC values...'
-    else:
-        msg = 'Fitting model...\nEstimating RC values...\n\nThis will take some time...\n\n'
+#     if exists:
+#         msg = 'Fitting model...\nEstimating RC values...'
+#     else:
+#         msg = 'Fitting model...\nEstimating RC values...\n\nThis will take some time...\n\n'
     
+    exists = False
+    
+    msg = 'ahi va'
         
     return importance, RMSE, mod, exists, name_file, msg
 
@@ -140,7 +143,7 @@ def EstimatingValues(mod,
                      crs = '3116',
                      res = 300,
                      ):
-    exists = False
+    
     if exists:
         
         if HQ:
@@ -416,8 +419,8 @@ app.layout = dmc.NotificationsProvider(html.Div([
                                                                      html.A('Martín Domínguez Durán', href='https://www.linkedin.com/in/mart%C3%ADn-dom%C3%ADnguez-dur%C3%A1n-54b4681b6/', target="_blank")], style = {'width':1460}),
                                                            html.Div([
                                                                html.Plaintext('   Reset modeling environment: ', style={'font-family' : 'bahnschrift'}),
-                                                               html.Button('RESET', style={'font-family' : 'bahnschrift','background-color':'darkred','font-size':'14px', 'border' : '0px',
-                                                                                                         'color': 'white','border-radius':'12px','width' : 100, 'height' :60},  id='RestartModel', n_clicks=0)
+                                                               # html.Button('RESET', style={'font-family' : 'bahnschrift','background-color':'darkred','font-size':'14px', 'border' : '0px',
+                                                                                                         # 'color': 'white','border-radius':'12px','width' : 100, 'height' :60},  id='RestartModel', n_clicks=0)
                                                            ], style=dict(display='flex',width = 400))
                                                         ],
                                                            style=dict(display='flex',width = 1900)
@@ -452,25 +455,25 @@ def update_graph(Organization, list_of_contents):
     
     return fig
 
-lst_clicks_rstrt = []
-@app.callback(
-    Output('none', 'children'),
-    Input('RestartModel','n_clicks')
-)
-def Restart(RestartModel):
+# lst_clicks_rstrt = []
+# @app.callback(
+#     Output('none', 'children'),
+#     Input('RestartModel','n_clicks')
+# )
+# def Restart(RestartModel):
     
-    lst_clicks_rstrt.append(RestartModel)
+#     lst_clicks_rstrt.append(RestartModel)
     
-    if len(lst_clicks_rstrt) == 1:
-        raise PreventUpdate
-    elif lst_clicks_rstrt[-1] > lst_clicks_rstrt[-2]:
-        for f in listdir('Regression results'):
-            if re.search('^RC_regression_estimations', f):
-                remove(path.join('Regression results', f))
-            if re.search('^Rn_estimations', f):
-                remove(path.join('Regression results', f))
+#     if len(lst_clicks_rstrt) == 1:
+#         raise PreventUpdate
+#     elif lst_clicks_rstrt[-1] > lst_clicks_rstrt[-2]:
+#         for f in listdir('Regression results'):
+#             if re.search('^RC_regression_estimations', f):
+#                 remove(path.join('Regression results', f))
+#             if re.search('^Rn_estimations', f):
+#                 remove(path.join('Regression results', f))
                 
-    return ''
+#     return ''
 
 
 @app.callback(
