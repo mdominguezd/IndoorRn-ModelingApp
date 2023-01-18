@@ -19,7 +19,6 @@ from dash_bootstrap_templates import load_figure_template
 import dash_daq as daq
 from dash.exceptions import PreventUpdate
 from dash import dash_table
-from jupyter_dash import JupyterDash
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
 from dash_iconify import DashIconify
@@ -697,6 +696,6 @@ def update_output(list_of_contents):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port = 8060)
+    app.run_server(debug=True)
 
 
