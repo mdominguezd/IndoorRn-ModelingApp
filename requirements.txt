@@ -11,6 +11,7 @@ Shapely==1.8.0
 statsmodels==0.13.1
 scipy==1.9.0
 dash-mantine-components==0.10.2
+dash-bootstrap-templates==1.0.7
 gunicorn
 dash-tools
 
