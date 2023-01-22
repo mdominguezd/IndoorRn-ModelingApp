@@ -7,7 +7,6 @@
 
 
 # Imports
-# Imports
 import plotly.express as px
 from plotly.subplots import make_subplots
 import numpy as np
@@ -21,43 +20,25 @@ from dash.exceptions import PreventUpdate
 from dash import dash_table
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
-from dash_iconify import DashIconify
 import geopandas as gpd
 from shapely.geometry import Polygon
-# from os import path
-# from os import remove
-# from os import listdir
+from os import path
+from os import remove
+from os import listdir
 import re
 import warnings
-import dash_mantine_components as dmc
 import sys
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from sklearn.ensemble import RandomForestRegressor as RFR
 import base64
 import io
 
 
-# ## Pre-processing for data distribution part
-# Unzip IndVarModel file
-# with zipfile.ZipFile("Dataset for regression/Houses_for_Rn_estimation_processed_3116.zip", 'r') as zip_ref:
-#     zip_ref.extractall("Dataset for regression")
-    
-# checking if the directory demo_folder 
-# exist or not.
-# if not path.exists("Regression results"):
-      
-#     # if the demo_folder directory is not present 
-#     # then create it.
-#     os.makedirs("Regression results")
-    
-# In[3]:
-
-
 # ## Pre-processing for RC estimations map
 
-# In[5]:
+# In[55]:
 
 
 warnings.filterwarnings('ignore')
@@ -116,19 +97,16 @@ def fit_model(X, y, HQ, model = 'Log_Linear'):
     
     name_file = model+var_ID
     
-#     if HQ:
-#         exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol_HQ.geojson')
-#     else:
-#         exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol.geojson')
+    if HQ:
+        exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol_HQ.geojson')
+    else:
+        exists = path.exists('Regression results/Rn_estimations_'+name_file+'_pol.geojson')
         
-#     if exists:
-#         msg = 'Fitting model...\nEstimating RC values...'
-#     else:
-#         msg = 'Fitting model...\nEstimating RC values...\n\nThis will take some time...\n\n'
+    if exists:
+        msg = 'Fitting model...\nEstimating RC values...'
+    else:
+        msg = 'Fitting model...\nEstimating RC values...\n\nThis will take some time...\n\n'
     
-    exists = False
-    
-    msg = 'ahi va'
         
     return importance, RMSE, mod, exists, name_file, msg
 
@@ -143,7 +121,7 @@ def EstimatingValues(mod,
                      crs = '3116',
                      res = 300,
                      ):
-    
+    exists = False
     if exists:
         
         if HQ:
@@ -177,11 +155,11 @@ def EstimatingValues(mod,
         df_RnModel_reg = df_RnModel[list(X.columns)]
         
         if model == 'Log_Linear':
-            df_RnModel['Reg'] = np.exp(mod.predict(df_RnModel_reg))
+            df_RnModel['RC'] = np.exp(mod.predict(df_RnModel_reg))
         elif model == 'Random_Forest':
-            df_RnModel['Reg'] = mod.predict(df_RnModel_reg)
+            df_RnModel['RC'] = mod.predict(df_RnModel_reg)
             
-        gdf = gpd.GeoDataFrame(df_RnModel['Reg'], geometry=gpd.points_from_xy(df_RnModel.X, df_RnModel.Y))
+        gdf = gpd.GeoDataFrame(df_RnModel['RC'], geometry=gpd.points_from_xy(df_RnModel.X, df_RnModel.Y))
         gdf = gdf.set_crs('EPSG:'+crs)
         gdf = gdf.to_crs('EPSG:4326')
         grid = gpd.GeoDataFrame({'geometry':polygons})
@@ -189,12 +167,12 @@ def EstimatingValues(mod,
         grid = grid.to_crs('EPSG:4326')
         grid = gpd.sjoin(grid, gdf)
         
-        # if HQ:
-        #     gdf.to_file('Regression results/Rn_estimations_'+name_file+'_HQ.geojson', driver="GeoJSON")
-        #     grid.to_file('Regression results/Rn_estimations_'+name_file+'_pol_HQ.geojson', driver="GeoJSON")
-        # else:
-        #     gdf.to_file('Regression results/Rn_estimations_'+name_file+'.geojson', driver="GeoJSON")
-        #     grid.to_file('Regression results/Rn_estimations_'+name_file+'_pol.geojson', driver="GeoJSON")
+        if HQ:
+            gdf.to_file('Regression results/Rn_estimations_'+name_file+'_HQ.geojson', driver="GeoJSON")
+            grid.to_file('Regression results/Rn_estimations_'+name_file+'_pol_HQ.geojson', driver="GeoJSON")
+        else:
+            gdf.to_file('Regression results/Rn_estimations_'+name_file+'.geojson', driver="GeoJSON")
+            grid.to_file('Regression results/Rn_estimations_'+name_file+'_pol.geojson', driver="GeoJSON")
     
     msg = 'Done :)'
     
@@ -204,7 +182,7 @@ def EstimatingValues(mod,
     return grid, x_c, y_c, msg
 
 
-# In[6]:
+# In[63]:
 
 
 def plot_figure(Organization, DF_RC):
@@ -214,11 +192,13 @@ def plot_figure(Organization, DF_RC):
     DF_data['Exceed WHO'] = DF_data.RC.apply(lambda df :'Above WHO recommended level' if  (df >100) else 'Below WHO recmmended level')
     DF_data['Exceed EPA'] = DF_data.RC.apply(lambda df :'Above EPA action level' if  (df >148) else 'Below EPA action level')
     
-    x = np.arange(0,440,25)
+    RC_max = np.max(DF_data['RC'])
+    
+    x = np.arange(0,(RC_max - RC_max%25) + 26,25)
     rc = DF_data['RC']
     y = np.histogram(rc, bins = x)
 
-    hist = px.histogram(DF_data, x = 'RC', range_x = [0,425])
+    hist = px.histogram(DF_data, x = 'RC', range_x = [0,(RC_max - RC_max%25) + 25])
 
     fig=make_subplots(specs=[[{'secondary_y': True}, {"type": "pie"}]],
                       cols = 2)
@@ -290,7 +270,7 @@ def plot_figure(Organization, DF_RC):
 
 # # App 
 
-# In[7]:
+# In[65]:
 
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.MORPH])
@@ -301,139 +281,191 @@ color = 'lightsteelblue'
 
 printing = html.P(["printing", html.Br()])
 
-app.layout = dmc.NotificationsProvider(html.Div([
-                                                 html.Div([html.Div([],style = {'width':20}), html.H1('Residential RC modeling', style={'font-family' : 'bahnschrift'})],  style = {'display':'flex'}),
-                                                 html.Div([''], style = {'height':20, 'background-color':color}),
-                                                 html.Div([html.Div([dcc.Upload(
-                                                                        id='upload-data-f',
-                                                                        children=html.Div([
-                                                                            'Drag and Drop or ',
-                                                                            html.A('Select Files for fitting the model (measurements)')
-                                                                        ]),
-                                                                        style={
-                                                                            'width': '950',
-                                                                            'height': '60px',
-                                                                            'lineHeight': '60px',
-                                                                            'borderWidth': '1px',
-                                                                            'borderStyle': 'dashed',
-                                                                            'borderRadius': '5px',
-                                                                            'textAlign': 'center',
-                                                                            'margin': '10px'
-                                                                        }
-                                                                    ),
-                                                            dash_table.DataTable(id='Fitting-data', style_table={'width' : 440})
-                                                          ]),
-                                                          html.Div([dcc.Upload(
-                                                                        id='upload-data-r',
-                                                                        children=html.Div([
-                                                                            'Drag and Drop or ',
-                                                                            html.A('Select Files for applying the model (Cadaster information)')
-                                                                        ]),
-                                                                        style={
-                                                                            'width': '950',
-                                                                            'height': '60px',
-                                                                            'lineHeight': '60px',
-                                                                            'borderWidth': '1px',
-                                                                            'borderStyle': 'dashed',
-                                                                            'borderRadius': '5px',
-                                                                            'textAlign': 'center',
-                                                                            'margin': '10px'
-                                                                        }
-                                                                    ),
-                                                            dash_table.DataTable(id='Reg-data', style_table={'width' : 440})]),
-                                                         ], style=dict(display='flex')),
-                                                 html.Div([''], style = {'height':20, 'background-color':color}),
-                                                 html.Div(
-                                                   [   html.Div([''], style = {'width':20}),
-                                                       html.Div([
-                                                           html.H5('Compare measurements with recommendation levels', style={'font-family' : 'bahnschrift'}),
-                                                           dcc.Dropdown(['Exceed WHO','Exceed OMS'],'Exceed WHO',id='Organization', style={'font-family' : 'bahnschrift','width':440}),
-                                                           html.H5('Feature and model selection for RC modeling', style={'font-family' : 'bahnschrift'}),
-                                                               html.Div([
-                                                                   html.Plaintext('   Feature selection information: ', style={'font-family' : 'bahnschrift', 'width' : 250}),
-                                                                   dcc.Dropdown(['Correlation matrix', 'Variance Inflation Factor'],'Correlation matrix', id = 'FS', style={'font-family' : 'bahnschrift', 'width' : 200})
-                                                               ], style=dict(display='flex', width = 440)),
-                                                               html.Div([
-                                                                   html.Plaintext('   Model: ', style={'font-family' : 'bahnschrift', 'width' : 100}),
-                                                                   dcc.Dropdown(['Log_Linear', 'Random_Forest'],'Log_Linear', id = 'model', style={'font-family' : 'bahnschrift', 'width' : 340})
-                                                               ], style=dict(display='flex', width = 440)),
-                                                               html.Div([
-                                                                   html.Plaintext('   Features: ', style={'font-family' : 'bahnschrift', 'width' : 100}),
-                                                                   dcc.Dropdown(['Basement_dummy',
-                                                                                 'Age_1980',
-                                                                                 'Lito_Fans',
-                                                                                 'Lito_Shales',
-                                                                                 'Precipitation',
-                                                                                 'Temperature',
-                                                                                 'Urban_dummy',
-                                                                                 'Fault_proximity',
-                                                                                 'Vertical_velocity'
-                                                                                ], False, id = 'vars_', style={'font-family' : 'bahnschrift' , 'width' : 340}, multi = True)
-                                                               ], style=dict(display='flex')),
-                                                               html.Div([],style = {'height': 10}),
-                                                               html.Div([
-                                                                   html.Plaintext('   High quality model:',  style={'font-family' : 'bahnschrift', 'width' : 170}),
-                                                                   html.Div([
-                                                                       html.Div([''], style = {'height':15}),
-                                                                       daq.BooleanSwitch(id='HQ_model', on=False),
-                                                                   ]),
-                                                                   ], style=dict(display='flex', width = 440)),
-                                                               html.Div([
-                                                                   html.Div([
-                                                                               html.Plaintext('   Run model: ', style={'font-family' : 'bahnschrift', 'width' : 100}),
-                                                                               html.Button('RUN', style={'font-family' : 'bahnschrift','background-color':'steelblue','font-size':'20px', 'border' : '0px',
-                                                                                                         'color': 'white','border-radius':'12px','width' : 340, 'height' :50},  id='Predict_Rn', n_clicks=0),
-                                                                            ], style=dict(display='flex', width = 465)), 
-                                                               ], style=dict(display='flex', width = 450)),
-                                                           html.Div(html.P(id = 'loading-data')),
-                                                       ], style = {'width' : 450}
-                                                       ), 
-                                                       html.Div([''], style = {'width':20, 'background-color':color}),
-                                                       html.Div([
-                                                                    dcc.Graph(id='RC-histogram', style = {'height' : 450, 'width' : 995}),
-
-                                                                    html.Div([''], style = {'width':20, 'background-color':color}),
-                                                                    dcc.Graph(id = 'FS_out',  style = {'height' : 450, 'width' : 400})
-                                                       ], style=dict(display='flex'))
+app.layout = html.Div([html.Div([html.Div([],style = {'width':20}), html.H1('Residential RC modeling', style={'font-family' : 'bahnschrift'})],  style = {'display':'flex'}),
+                       html.Div([''], style = {'height':20, 'background-color':color}),
+                       html.Div([html.H5('Upload here your datasets before you continue',
+                                         style={'font-family' : 'bahnschrift'}),
+                                 html.Div([html.Div([dcc.Upload(id='upload-data-f',
+                                                                children=html.Div(['Drag and Drop or ',
+                                                                                   html.B('Select Files for fitting the model (measurements)')
+                                                                                  ]),
+                                                                style={'width': '935px',
+                                                                       'height': '60px',
+                                                                       'color' : 'darkblue',
+                                                                       'lineHeight': '60px',
+                                                                       'borderWidth': '1px',
+                                                                       'borderStyle': 'dashed',
+                                                                       'borderRadius': '5px',
+                                                                       'textAlign': 'center',
+                                                                       'margin': '10px'
+                                                                      }
+                                                               )
+                                                    ]),
+                                           html.Div([dcc.Upload(id='upload-data-r',
+                                                                children=html.Div(['Drag and Drop or ',
+                                                                                   html.B('Select Files for applying the model (Cadaster information)')
+                                                                                  ]),
+                                                                style={'width': '935px',
+                                                                       'height': '60px',
+                                                                       'color' : 'darkred',
+                                                                       'lineHeight': '60px',
+                                                                       'borderWidth': '1px',
+                                                                       'borderStyle': 'dashed',
+                                                                       'borderRadius': '5px',
+                                                                       'textAlign': 'center',
+                                                                       'margin': '10px'
+                                                                      }
+                                                               )
+                                                    ]),
+                                          ],
+                                          style = dict(display='flex',  width =1900)
+                                         ),
+                                 html.Div([''], style = {'height':20, 'background-color':color}),
+                                 html.Div([html.Div([''], style = {'width':20}),
+                                           html.Div([html.H5('Compare measurements with recommendation levels', 
+                                                             style={'font-family' : 'bahnschrift'}),
+                                                     dcc.Dropdown(['Exceed WHO','Exceed EPA'],
+                                                                  'Exceed WHO',
+                                                                  id='Organization',
+                                                                  style={'font-family' : 'bahnschrift','width':440}
+                                                                 ),
+                                                     html.H5('Feature and model selection for RC modeling', style={'font-family' : 'bahnschrift'}),
+                                                     html.Div([html.Plaintext('   Feature selection information: ',
+                                                                              style={'font-family' : 'bahnschrift', 'width' : 250}
+                                                                             ),
+                                                               dcc.Dropdown(['Correlation matrix', 'Variance Inflation Factor'],
+                                                                            'Correlation matrix',
+                                                                            id = 'FS', style={'font-family' : 'bahnschrift', 'width' : 200}
+                                                                           )
+                                                              ],
+                                                              style=dict(display='flex', width = 440)
+                                                             ),
+                                                     html.Div([html.Plaintext('   Model: ',
+                                                                              style={'font-family' : 'bahnschrift', 'width' : 100}
+                                                                             ),
+                                                               dcc.Dropdown(['Log_Linear', 'Random_Forest'],
+                                                                            'Log_Linear',
+                                                                            id = 'model',
+                                                                            style={'font-family' : 'bahnschrift', 'width' : 340}
+                                                                           )
+                                                              ], 
+                                                              style=dict(display='flex', width = 440)
+                                                             ),
+                                                     html.Div([html.Plaintext('   Features: ',
+                                                                              style={'font-family' : 'bahnschrift', 'width' : 100}
+                                                                             ),
+                                                               dcc.Dropdown([],
+                                                                            False,
+                                                                            id = 'vars_',
+                                                                            style={'font-family' : 'bahnschrift' , 'width' : 340},
+                                                                            multi = True
+                                                                           )
+                                                              ], 
+                                                              style=dict(display='flex')
+                                                             ),
+                                                     html.Div([], style = {'height': 10}),
+                                                     html.Div([html.Plaintext('   High quality model:',
+                                                                              style={'font-family' : 'bahnschrift', 'width' : 170}
+                                                                             ),
+                                                               html.Div([html.Div([''], style = {'height':15}),
+                                                                         daq.BooleanSwitch(id='HQ_model', on=False),
+                                                                        ]
+                                                                       ),
+                                                              ],
+                                                              style=dict(display='flex', width = 440)),
+                                                     html.Div([html.Div([html.Plaintext('   Run model: ',
+                                                                                        style={'font-family' : 'bahnschrift', 'width' : 100}
+                                                                                       ),
+                                                                         html.Button('RUN',
+                                                                                     style={'font-family' : 'bahnschrift',
+                                                                                            'background-color':'steelblue',
+                                                                                            'font-size':'20px',
+                                                                                            'border' : '0px',
+                                                                                            'color': 'white',
+                                                                                            'border-radius':'12px',
+                                                                                            'width' : 340,
+                                                                                            'height' :50},
+                                                                                     id='Predict_Rn',
+                                                                                     n_clicks=0),
+                                                                        ],
+                                                                        style=dict(display='flex', width = 465)
+                                                                       ),
+                                                              ],
+                                                              style=dict(display='flex', width = 450)),
                                                     ],
-                                                        style=dict(display='flex')),
-
-                                                     html.Div([''],style = {'height':20, 'background-color':color}),
-                                               html.Div([
-                                                   html.Div([''], style = {'width':20}),
-                                                   html.Div([
-                                                             html.H5(' Regression results: ', style={'font-family' : 'bahnschrift'}),
-                                                             dash_table.DataTable(id= 'imp', style_table={'width' : 440}),
-                                                             html.H6(' '),
-                                                             dash_table.DataTable(id= 'RMSE', style_table={'width' : 440})
-                                                            ]),
-                                                   html.Div([''],style={'width':10}),
-                                                   html.Div([''],style={'width':20, 'background-color':color}),
-                                                           dcc.Graph(id='RC-model-map', style = {'height' : 540, 'width' : 1460}, config = {'displayModeBar': False})
-                                                       ], style=dict(display='flex')
-                                               ),
-                                               html.Div([''], style = {'height':20,'background-color':color}),
-                                               html.Div([''], style = {'height':20}),
-                                               html.Div([
-                                                           html.Div([html.P('Dashboard created by:'), 
-                                                                     html.A('Martín Domínguez Durán', href='https://www.linkedin.com/in/mart%C3%ADn-dom%C3%ADnguez-dur%C3%A1n-54b4681b6/', target="_blank")], style = {'width':1460}),
-                                                           html.Div([
-                                                               html.Plaintext('   Reset modeling environment: ', style={'font-family' : 'bahnschrift'}),
-                                                               # html.Button('RESET', style={'font-family' : 'bahnschrift','background-color':'darkred','font-size':'14px', 'border' : '0px',
-                                                                                                         # 'color': 'white','border-radius':'12px','width' : 100, 'height' :60},  id='RestartModel', n_clicks=0)
-                                                           ], style=dict(display='flex',width = 400))
-                                                        ],
-                                                           style=dict(display='flex',width = 1900)
-                                                       ),
-                                               html.P(id='none'),
-                                               # html.Div(id = 'message'),
-                                               # html.Div(id = 'notif')
-                                            ])
-                                          )
+                                                    style = {'width' : 450}
+                                                   ), 
+                                           html.Div([''], style = {'width':20, 'background-color':color}),
+                                           html.Div([dcc.Graph(id='RC-histogram',
+                                                               style = {'height' : 470, 'width' : 995}
+                                                              ),
+                                                     html.Div([''], style = {'width':20, 'background-color':color}),
+                                                     dcc.Graph(id = 'FS_out',
+                                                               style = {'height' : 470, 'width' : 400}
+                                                              )
+                                                    ],
+                                                    style=dict(display='flex'))
+                                          ],
+                                          style=dict(display='flex')),
+                                 html.Div([''],style = {'height':20, 'background-color':color}),
+                                 html.Div([html.Div([''], style = {'width':20}),
+                                           html.Div([html.H5(' Regression results: ',
+                                                             style={'font-family' : 'bahnschrift'}
+                                                            ),
+                                                     dash_table.DataTable(id= 'imp',
+                                                                          style_table={'width' : 440}
+                                                                         ),
+                                                     html.H6(' '),
+                                                     dash_table.DataTable(id= 'RMSE',
+                                                                          style_table={'width' : 440}
+                                                                         )
+                                                    ]
+                                                   ),
+                                           html.Div([''],style={'width':10}),
+                                           html.Div([''],style={'width':20, 'background-color':color}),
+                                           dcc.Graph(id='RC-model-map',
+                                                     style = {'height' : 540, 'width' : 1460},
+                                                     config = {'displayModeBar': False})
+                                          ],
+                                          style=dict(display='flex')
+                                         ),
+                                 html.Div([''], style = {'height':20,'background-color':color}),
+                                 html.Div([''], style = {'height':20}),
+                                 html.Div([html.Div([html.P('Dashboard created by:'),
+                                                     html.A('Martín Domínguez Durán',
+                                                            href='https://www.linkedin.com/in/mart%C3%ADn-dom%C3%ADnguez-dur%C3%A1n-54b4681b6/',
+                                                            target="_blank")
+                                                    ],
+                                                    style = {'width':1460}),
+                                           html.Div([html.Plaintext('   Reset modeling environment: ',
+                                                                    style={'font-family' : 'bahnschrift'}
+                                                                   ),
+                                                     html.Button('RESET',
+                                                                 style={'font-family' : 'bahnschrift',
+                                                                        'background-color':'darkred',
+                                                                        'font-size':'14px',
+                                                                        'border' : '0px',
+                                                                        'color': 'white',
+                                                                        'border-radius':'12px',
+                                                                        'width' : 100,
+                                                                        'height' :60},
+                                                                 id='RestartModel',
+                                                                 n_clicks=0)
+                                                    ],
+                                                    style=dict(display='flex',width = 400))
+                                          ],
+                                          style=dict(display='flex',width = 1900)
+                                         ),
+                                 html.P(id = 'none'),
+                                 
+                                ]
+                               ),
+                      ])
+                                          
                                 
 
 @app.callback(
-    Output('RC-histogram', 'figure'),
+    [Output('RC-histogram', 'figure'), Output('vars_', 'options')],
     [Input('Organization', 'value'), Input('upload-data-f','contents')])
 def update_graph(Organization, list_of_contents):
     
@@ -445,35 +477,36 @@ def update_graph(Organization, list_of_contents):
     
         df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
         
-        fig, df = plot_figure(Organization, df)
+        fig, df_ = plot_figure(Organization, df)
         
-        df = list(df.iloc[:,-2:].columns)
+        var_names = list(df.iloc[:,2:].columns)
         
     else:
         
         raise PreventUpdate
     
-    return fig
+    return fig, var_names
 
-# lst_clicks_rstrt = []
-# @app.callback(
-#     Output('none', 'children'),
-#     Input('RestartModel','n_clicks')
-# )
-# def Restart(RestartModel):
+lst_clicks_rstrt = []
+
+@app.callback(
+    Output('none', 'children'),
+    Input('RestartModel','n_clicks')
+)
+def Restart(RestartModel):
     
-#     lst_clicks_rstrt.append(RestartModel)
+    lst_clicks_rstrt.append(RestartModel)
     
-#     if len(lst_clicks_rstrt) == 1:
-#         raise PreventUpdate
-#     elif lst_clicks_rstrt[-1] > lst_clicks_rstrt[-2]:
-#         for f in listdir('Regression results'):
-#             if re.search('^RC_regression_estimations', f):
-#                 remove(path.join('Regression results', f))
-#             if re.search('^Rn_estimations', f):
-#                 remove(path.join('Regression results', f))
+    if len(lst_clicks_rstrt) == 1:
+        raise PreventUpdate
+    elif lst_clicks_rstrt[-1] > lst_clicks_rstrt[-2]:
+        for f in listdir('Regression results'):
+            if re.search('^RC_regression_estimations', f):
+                remove(path.join('Regression results', f))
+            if re.search('^Rn_estimations', f):
+                remove(path.join('Regression results', f))
                 
-#     return ''
+    return ''
 
 
 @app.callback(
@@ -525,61 +558,12 @@ def feature_sel(info_FS, list_of_contents):
         raise PreventUpdate
             
     return fig
-
-
-# lst_clicks = []
-# @app.callback(
-#     Output('message', 'children'),
-#     [Input('Predict_Rn', 'n_clicks'),
-#      Input('model', 'value'),
-#      Input('vars_','value'),
-#      Input('HQ_model','on')]
-# )
-# def update_message(Predict_Rn, model, variables, HQ):
-    
-#     lst_clicks.append(Predict_Rn)
-    
-#     if len(lst_clicks) == 1:
-#         raise PreventUpdate
-#     elif lst_clicks[-1] == lst_clicks[-2]:
-#         raise PreventUpdate
-#     else:
-        
-#         var_ID = ''
-#         for i in variables:
-#             var_ID += i[0]
-        
-#         lst_clicks.append(Predict_Rn)
-        
-#         if HQ:
-#             if path.exists('Regression results/Rn_estimations_'+model+var_ID+'_pol_HQ.geojson'):
-#                 msg = 'This model has already been created. The results should be plotted in less than a minute.'
-#             else:
-#                 msg = "Modeling has started. Depending on the size of the dataset, this process will take more or less 30 minutes to plot the estimations..."
-#         else:
-#             if path.exists('Regression results/Rn_estimations_'+model+var_ID+'_pol.geojson'):
-#                 msg = 'This model has already been created. The results should be plotted in less than a minute.'
-#             else:
-#                 msg = "Modeling has started. Depending on the size of the dataset, this process will take more or less 5 minutes to plot the estimations..."
-            
-#         message = dmc.Notification(title="Hey there!",
-#                          id="ntf",
-#                          action='show',
-#                          loading=True,
-#                          color="orange",
-#                          message=msg,
-#                          icon = True,
-#                          autoClose = False, 
-#                          disallowClose = False
-#                         )
-        
-#         return message
     
 
 lst_clicks_mp = []
 
 @app.callback(
-    [Output('RC-model-map', 'figure'), Output('imp', 'data'), Output('RMSE', 'data')],
+    [Output('RC-model-map', 'figure'),Output('imp', 'data'),Output('RMSE', 'data')],
     [Input('Predict_Rn','n_clicks'),Input('model', 'value'), Input('vars_','value'), Input('HQ_model','on'), Input('upload-data-f', 'contents'), Input('upload-data-r', 'contents')]
 )
 
@@ -587,25 +571,8 @@ def update_map(Predict_Rn, model, vars_, HQ, DF_RC_c, df_RnModel_c):
     
     lst_clicks_mp.append(Predict_Rn)
     
-    if DF_RC_c is not None:
-        
-        cont = DF_RC_c.split(',')[1]
-        
-        decoded = base64.b64decode(cont)
-    
-        DF_RC = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-        
-    if df_RnModel_c is not None:
-        
-        cont = df_RnModel_c.split(',')[1]
-        
-        decoded = base64.b64decode(cont)
-    
-        df_RnModel = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-    
     if (Predict_Rn == 0):
-        
-        notif = ' '
+
         df = pd.DataFrame([[0,-72]])
         df_ = pd.DataFrame([''])
         df_.columns = [' ']
@@ -623,14 +590,21 @@ def update_map(Predict_Rn, model, vars_, HQ, DF_RC_c, df_RnModel_c):
         
     elif (lst_clicks_mp[-1] > lst_clicks_mp[-2]):
         
-        notif = dmc.Notification(title="Hey there!",
-                         id="ntf",
-                         action="update",
-                         message="Model has finished",
-                         color = 'green',
-                         icon = True,
-                         autoClose = 10*1000,
-                        )
+        if DF_RC_c is not None:
+        
+            cont = DF_RC_c.split(',')[1]
+
+            decoded = base64.b64decode(cont)
+
+            DF_RC = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+
+        if df_RnModel_c is not None:
+
+            cont = df_RnModel_c.split(',')[1]
+
+            decoded = base64.b64decode(cont)
+
+            df_RnModel = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
         
         if  HQ:    
             # print('HQ')
@@ -652,7 +626,7 @@ def update_map(Predict_Rn, model, vars_, HQ, DF_RC_c, df_RnModel_c):
         fig = px.choropleth_mapbox(rc_pol,
                                     geojson=rc_pol.geometry,
                                     locations = rc_pol.index,
-                                    color='Reg',
+                                    color='RC',
                                     color_continuous_scale="Portland",
                                     opacity = 0.65,
                                     hover_data= ['Reg']
@@ -668,35 +642,6 @@ def update_map(Predict_Rn, model, vars_, HQ, DF_RC_c, df_RnModel_c):
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
         
     return fig, imp, RMSE
-
-@app.callback(Output('Fitting-data', 'data'),
-              Input('upload-data-f', 'contents'))
-def update_output(list_of_contents):
-    
-    if list_of_contents is not None:
-        
-        cont = list_of_contents.split(',')[1]
-        
-        decoded = base64.b64decode(cont)
-    
-        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-
-        return df.head(1).to_dict('records')
-    
-@app.callback(Output('Reg-data', 'data'),
-              Input('upload-data-r', 'contents'))
-def update_output(list_of_contents):
-    
-    if list_of_contents is not None:
-        
-        cont = list_of_contents.split(',')[1]
-        
-        decoded = base64.b64decode(cont)
-    
-        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-
-        return df.head(1).to_dict('records')
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)
