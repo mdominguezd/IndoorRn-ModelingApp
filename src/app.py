@@ -459,7 +459,14 @@ def update_graph(Organization, list_of_contents):
         
     else:
         
-        raise PreventUpdate
+        fig = make_subplots(cols = 1)
+
+        fig.update_layout(template = 'morph',
+                          yaxis=dict(showgrid = False, tickvals = [], zeroline = False),
+                          xaxis=dict(showgrid = False, tickvals = [], zeroline = False)
+                         )
+        
+        var_names = []
     
     return fig, var_names
 
@@ -510,7 +517,12 @@ def feature_sel(info_FS, list_of_contents):
                           title_font_family = 'bahnschrift',
                           font_family = 'bahnschrift')
     else:
-        raise PreventUpdate
+        fig = make_subplots(cols = 1)
+
+        fig.update_layout(template = 'morph',
+                          yaxis=dict(showgrid = False, tickvals = [], zeroline = False),
+                          xaxis=dict(showgrid = False, tickvals = [], zeroline = False)
+                         )
             
     return fig
     
