@@ -29,7 +29,6 @@ import re
 import warnings
 import sys
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from sklearn.ensemble import RandomForestRegressor as RFR
 import base64
@@ -166,13 +165,6 @@ def EstimatingValues(mod,
         grid = grid.set_crs('EPSG:'+crs)
         grid = grid.to_crs('EPSG:4326')
         grid = gpd.sjoin(grid, gdf)
-        
-        if HQ:
-            gdf.to_file('Regression results/Rn_estimations_'+name_file+'_HQ.geojson', driver="GeoJSON")
-            grid.to_file('Regression results/Rn_estimations_'+name_file+'_pol_HQ.geojson', driver="GeoJSON")
-        else:
-            gdf.to_file('Regression results/Rn_estimations_'+name_file+'.geojson', driver="GeoJSON")
-            grid.to_file('Regression results/Rn_estimations_'+name_file+'_pol.geojson', driver="GeoJSON")
     
     msg = 'Done :)'
     
@@ -436,23 +428,7 @@ app.layout = html.Div([html.Div([html.Div([],style = {'width':20}), html.H1('Res
                                                             href='https://www.linkedin.com/in/mart%C3%ADn-dom%C3%ADnguez-dur%C3%A1n-54b4681b6/',
                                                             target="_blank")
                                                     ],
-                                                    style = {'width':1460}),
-                                           html.Div([html.Plaintext('   Reset modeling environment: ',
-                                                                    style={'font-family' : 'bahnschrift'}
-                                                                   ),
-                                                     html.Button('RESET',
-                                                                 style={'font-family' : 'bahnschrift',
-                                                                        'background-color':'darkred',
-                                                                        'font-size':'14px',
-                                                                        'border' : '0px',
-                                                                        'color': 'white',
-                                                                        'border-radius':'12px',
-                                                                        'width' : 100,
-                                                                        'height' :60},
-                                                                 id='RestartModel',
-                                                                 n_clicks=0)
-                                                    ],
-                                                    style=dict(display='flex',width = 400))
+                                                    style = {'width':1460})
                                           ],
                                           style=dict(display='flex',width = 1900)
                                          ),
@@ -486,27 +462,6 @@ def update_graph(Organization, list_of_contents):
         raise PreventUpdate
     
     return fig, var_names
-
-lst_clicks_rstrt = []
-
-@app.callback(
-    Output('none', 'children'),
-    Input('RestartModel','n_clicks')
-)
-def Restart(RestartModel):
-    
-    lst_clicks_rstrt.append(RestartModel)
-    
-    if len(lst_clicks_rstrt) == 1:
-        raise PreventUpdate
-    elif lst_clicks_rstrt[-1] > lst_clicks_rstrt[-2]:
-        for f in listdir('Regression results'):
-            if re.search('^RC_regression_estimations', f):
-                remove(path.join('Regression results', f))
-            if re.search('^Rn_estimations', f):
-                remove(path.join('Regression results', f))
-                
-    return ''
 
 
 @app.callback(
@@ -629,7 +584,7 @@ def update_map(Predict_Rn, model, vars_, HQ, DF_RC_c, df_RnModel_c):
                                     color='RC',
                                     color_continuous_scale="Portland",
                                     opacity = 0.65,
-                                    hover_data= ['Reg']
+                                    hover_data= ['RC']
                                    )
         
         fig.update_traces(marker_line_width = 0, hoverinfo = 'z')
